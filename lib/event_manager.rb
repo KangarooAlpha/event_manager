@@ -51,9 +51,24 @@ def clean_phone_numbers(number)
 end
 
 def write_date_and_time(name, date, time)
-  filename = "lib/d_reg.txt" #unless File.exist?('lib/d_reg.txt')
+  filename = "output/d_reg.txt" #unless File.exist?('lib/d_reg.txt')
   File.open(filename, 'a') do |file| 
     file.puts "#{name} registered on #{date} at #{time}\n"
+  end
+end
+
+def day_regestered(hash, k, date)
+  h = k[date.wday]
+  hash = hash.each {|k,v| hash[k] +=1 if h == k}
+  hash
+end
+
+def write_most_reg_day(hash)
+  day = hash.sort_by{|k,v| v}
+  kday = day[6][0]
+  filename = "output/d_reg.txt" #unless File.exist?('lib/d_reg.txt')
+  File.open(filename, 'a') do |file| 
+    file.puts "The day most people registered on is #{kday.capitalize}."
   end
 end
 
@@ -68,7 +83,11 @@ contents = CSV.open(
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
 
-if File.exist?('lib/d_reg.txt') then File.delete('lib/d_reg.txt') end
+if File.exist?('output/d_reg.txt') then File.delete('output/d_reg.txt') end
+
+days = {sunday: 0, monday: 0, tuesday: 0,
+      wednesday: 0, thursday:0, friday: 0, saturday: 0}
+k = days.keys
 
 contents.each do |row|
   id = row[0]
@@ -81,6 +100,8 @@ contents.each do |row|
   d = Date.strptime(d, '%m-%d-%Y')
   t = (Time.parse(dt[1])).strftime("%k:%M")
 
+  days = day_regestered(days, k, d)
+
   zipcode = clean_zipcode(row[:zipcode])
   legislators = legislators_by_zipcode(zipcode)
 
@@ -89,3 +110,5 @@ contents.each do |row|
   save_thank_you_letter(id,form_letter)
   write_date_and_time(name,d,t)
 end
+
+write_most_reg_day(days)
